@@ -6,5 +6,6 @@ const cartController = require("../controllers/cartController");
 router.route("/").get(cartController.getCartItems).post(cartController.addToCart);
 router.post("/remove", cartController.removeProductFromCart); // .patch(verifyJWT, usersController.updateUser)
 router.post("/reduce-quantity", cartController.reduceQuantityInCart); // .patch(verifyJWT, usersController.updateUser)
+router.post("/clear-cart", cartController.removeAllProductsFromCart);
 // .delete(verifyJWT, usersController.deleteUser);
 module.exports = router;

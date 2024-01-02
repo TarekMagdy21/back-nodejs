@@ -17,7 +17,17 @@ exports.getOrders = async (req, res) => {
       return res.status(404).json({message: "Orders not found."});
     }
 
-    return res.status(200).json({orders});
+    // Calculate total price for each order
+    const ordersWithTotalPrice = orders.map((order) => {
+      const totalPrice = order.products.reduce((acc, product) => {
+        return acc + product.product.price * product.quantity;
+      }, 0);
+      return {
+        ...order._doc,
+        totalPrice: totalPrice,
+      };
+    });
+    return res.status(200).json({orders: ordersWithTotalPrice});
   } catch (error) {
     console.error(error);
     return res.status(500).json({error: "Internal server error."});
@@ -26,11 +36,18 @@ exports.getOrders = async (req, res) => {
 
 exports.addOrder = async (req, res) => {
   try {
-    const { userId, cartId, shippingAddress, totalPrice, products } = req.body;
+    const {userId, cartId, shippingAddress, totalPrice, products} = req.body;
 
     // Validate request parameters
-    if (!userId || !cartId || !shippingAddress || !totalPrice || !products || products.length === 0) {
-      return res.status(400).json({ error: "Invalid request parameters." });
+    if (
+      !userId ||
+      !cartId ||
+      !shippingAddress ||
+      !totalPrice ||
+      !products ||
+      products.length === 0
+    ) {
+      return res.status(400).json({error: "Invalid request parameters."});
     }
 
     // Create a new order
@@ -52,9 +69,42 @@ exports.addOrder = async (req, res) => {
       await cart.save();
     }
 
-    return res.status(200).json({ message: "Order added successfully." });
+    return res.status(200).json({message: "Order added successfully."});
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Internal server error." });
+    return res.status(500).json({error: "Internal server error."});
+  }
+};
+
+exports.editOrderStatus = async (req, res) => {
+  try {
+    const orderId = req.params.orderId; // Assuming the order ID is provided as a parameter
+
+    // Validate order ID
+    if (!orderId) {
+      return res.status(400).json({error: "Invalid order ID."});
+    }
+
+    const {status} = req.body;
+
+    // Validate request parameters
+    if (
+      !status ||
+      !["Pending", "Processing", "Shipped", "Delivered", "Cancelled"].includes(status)
+    ) {
+      return res.status(400).json({error: "Invalid status value."});
+    }
+
+    // Find the order by ID and update the status
+    const order = await Order.findByIdAndUpdate(orderId, {status}, {new: true});
+
+    if (!order) {
+      return res.status(404).json({message: "Order not found."});
+    }
+
+    return res.status(200).json({order});
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({error: "Internal server error."});
   }
 };

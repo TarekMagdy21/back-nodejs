@@ -44,14 +44,13 @@ exports.getCartItems = async (req, res) => {
 
     // Validate user ID
     if (!userId) {
-      return res.status(400).json({ error: "Invalid user ID." });
+      return res.status(400).json({error: "Invalid user ID."});
     }
 
     // Find the user's cart
-    const cart = await Cart.findOne({ user: userId }).populate("items.product");
-    console.log("Cart", cart);
+    const cart = await Cart.findOne({user: userId}).populate("items.product");
     if (!cart) {
-      return res.status(404).json({ message: "Cart not found." });
+      return res.status(404).json({message: "Cart not found."});
     }
 
     // Calculate total price before discount
@@ -67,22 +66,20 @@ exports.getCartItems = async (req, res) => {
       const discount = (product.discountPercentage / 100) * itemPrice;
       return acc + itemPrice - discount;
     }, 0);
-
     // Prepare response with items, total price before discount, total price after discount, and dynamic discount
     const response = {
+      id: cart._id,
       items: cart.items,
       totalPriceBeforeDiscount: totalPriceBeforeDiscount,
       totalPriceAfterDiscount: totalPriceAfterDiscount,
-     };
+    };
 
     return res.status(200).json(response);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Internal server error." });
+    return res.status(500).json({error: "Internal server error."});
   }
 };
-
-
 
 exports.removeProductFromCart = async (req, res) => {
   try {
@@ -148,6 +145,35 @@ exports.reduceQuantityInCart = async (req, res) => {
     await cart.save();
 
     return res.status(200).json({message: "Quantity reduced successfully."});
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({error: "Internal server error."});
+  }
+};
+
+exports.removeAllProductsFromCart = async (req, res) => {
+  try {
+    const {userId} = req.body;
+
+    // Validate user ID
+    if (!userId) {
+      return res.status(400).json({error: "Invalid request parameters."});
+    }
+
+    // Find the user's cart
+    const cart = await Cart.findOne({user: userId});
+
+    if (!cart) {
+      return res.status(404).json({message: "Cart not found."});
+    }
+
+    // Remove all products from the cart
+    cart.items = [];
+
+    // Save the updated cart
+    await cart.save();
+
+    return res.status(200).json({message: "All products removed from the cart successfully."});
   } catch (error) {
     console.error(error);
     return res.status(500).json({error: "Internal server error."});
