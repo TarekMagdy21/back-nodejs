@@ -9,14 +9,18 @@ const cors = require("cors");
 const corsOptions = require("./config/corsOptions");
 const connectDB = require("./config/dbConn");
 const mongoose = require("mongoose");
+const allowedOrigins = require("./config/allowedOrigins");
 const PORT = process.env.PORT || 3500;
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 connectDB();
 
 app.use(logger);
 
-app.use(cors(corsOptions));
-
+app.use(cors({
+  origin: allowedOrigins,
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+}));
 app.use(express.json());
 
 app.use(cookieParser());
