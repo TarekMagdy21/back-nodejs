@@ -5,6 +5,7 @@ const User = require("../models/User");
 // @access Public or private will see it
 const createProduct = async (req, res) => {
   const {
+    category,
     title,
     rating,
     numberOfOrders,
@@ -20,8 +21,16 @@ const createProduct = async (req, res) => {
     isFavorite,
     images,
   } = req.body;
-  if (!title || !stock || !price || !description || shipping?.cost < 0 || images.length == 0) {
-    return res.status(400).json({message: "All fields are required"});
+  if (
+    !category ||
+    !title ||
+    !stock ||
+    !price ||
+    !description ||
+    shipping?.cost < 0 ||
+    images.length == 0
+  ) {
+    return res.status(400).json({ message: "All fields are required" });
   }
   try {
     const result = await Product.create({
@@ -39,10 +48,13 @@ const createProduct = async (req, res) => {
       shipping,
       size,
       stock,
+      category,
     });
-    res.status(200).json({message: "Product Created Successfully", product: result});
+    res
+      .status(200)
+      .json({ message: "Product Created Successfully", product: result });
   } catch (err) {
-    res.status(500).json({message: "Internal Server Error"});
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -72,7 +84,9 @@ const getProducts = async (req, res) => {
 
     // Check if a specific rating is provided in the query parameters
     if (req.query.rating) {
-      filters.rating = req.query.rating.split(",").map((rating) => rating.trim());
+      filters.rating = req.query.rating
+        .split(",")
+        .map((rating) => rating.trim());
     }
 
     // Check if min and/or max price is provided in the query parameters
@@ -97,7 +111,7 @@ const getProducts = async (req, res) => {
       const limit = parseInt(req.query.limit);
       const skip = (page - 1) * limit;
 
-      paginationOptions = {skip, limit};
+      paginationOptions = { skip, limit };
     }
 
     // Check if sorting is specified in the query parameters
@@ -113,13 +127,15 @@ const getProducts = async (req, res) => {
     const totalCount = await Product.countDocuments(filters);
 
     // Get the filtered products with pagination and sorting
-    const products = await Product.find(filters, {}, paginationOptions).sort(sortOptions);
+    const products = await Product.find(filters, {}, paginationOptions).sort(
+      sortOptions
+    );
 
     // Send the response with total count and filtered products
-    res.json({totalCount, products});
+    res.json({ totalCount, products });
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: "Internal Server Error"});
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -134,10 +150,14 @@ const getProductsCategories = async (req, res) => {
         category: req.params.category.split("category=")[1].replace(/\s/g, ""),
       });
     }
-    let productsCategories = [...new Set(products.map((product) => product.category))];
+    let productsCategories = [
+      ...new Set(products.map((product) => product.category)),
+    ];
     let productsBrands = [...new Set(products.map((product) => product.brand))];
     let productsColors = [...new Set(products.map((product) => product.color))];
-    let productsRatings = [...new Set(products.map((product) => product.rating))];
+    let productsRatings = [
+      ...new Set(products.map((product) => product.rating)),
+    ];
     res.status(200).json({
       cats: productsCategories,
       brands: productsBrands,
@@ -145,7 +165,7 @@ const getProductsCategories = async (req, res) => {
       ratings: productsRatings,
     });
   } catch (err) {
-    res.status(500).json({err: "Internal Server Error"});
+    res.status(500).json({ err: "Internal Server Error" });
   }
 };
 const toggleFavorite = async (req, res) => {
@@ -155,21 +175,21 @@ const toggleFavorite = async (req, res) => {
 
     // Validate user ID and product ID
     if (!userId || !productId) {
-      return res.status(400).json({error: "Invalid user or product ID."});
+      return res.status(400).json({ error: "Invalid user or product ID." });
     }
 
     // Find the user by ID
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({message: "User not found."});
+      return res.status(404).json({ message: "User not found." });
     }
 
     // Find the product by ID
     const product = await Product.findById(productId);
 
     if (!product) {
-      return res.status(404).json({message: "Product not found."});
+      return res.status(404).json({ message: "Product not found." });
     }
 
     // Check if the product is already in the wishlist
@@ -185,12 +205,13 @@ const toggleFavorite = async (req, res) => {
     // Save the updated user
     await user.save();
 
-    return res
-      .status(200)
-      .json({message: "Favorite status toggled successfully.", wishlist: user.wishlist});
+    return res.status(200).json({
+      message: "Favorite status toggled successfully.",
+      wishlist: user.wishlist,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({error: "Internal server error."});
+    return res.status(500).json({ error: "Internal server error." });
   }
 };
 const getWishlist = async (req, res) => {
@@ -199,20 +220,20 @@ const getWishlist = async (req, res) => {
 
     // Validate user ID
     if (!userId) {
-      return res.status(400).json({error: "Invalid user ID."});
+      return res.status(400).json({ error: "Invalid user ID." });
     }
 
     // Find the user by ID
     const user = await User.findById(userId).populate("wishlist");
 
     if (!user) {
-      return res.status(404).json({message: "User not found."});
+      return res.status(404).json({ message: "User not found." });
     }
 
-    return res.status(200).json({wishlist: user.wishlist});
+    return res.status(200).json({ wishlist: user.wishlist });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({error: "Internal server error."});
+    return res.status(500).json({ error: "Internal server error." });
   }
 };
 module.exports = {
