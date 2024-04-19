@@ -50,8 +50,8 @@ app.post("/create-checkout-session", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: "https://e-commerce-front-weld.vercel.app",
-      cancel_url: "https://e-commerce-front-weld.vercel.app",
+      success_url: "https://e-commerce-front-weld.vercel.app/cart/success",
+      cancel_url: "https://e-commerce-front-weld.vercel.app/cart/cancel",
     });
     res.json({id: session.id});
   } catch (error) {
